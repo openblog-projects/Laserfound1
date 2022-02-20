@@ -6,6 +6,8 @@ public class Laser : MonoBehaviour
 {
     private LineRenderer lr;
 
+    private bool checkForReach = false;
+
     //reference to my AgentScript
     AgentScript agentScript;
 
@@ -48,23 +50,49 @@ public class Laser : MonoBehaviour
         //kann ich nicht einfach immer direkt disablen und enablen based on variable
         if(agentScript.checkIfRayHitsObject == true){
             this.GetComponent<LineRenderer>().enabled = true;
+            checkForReach = true;
         }
-        else this.GetComponent<LineRenderer>().enabled = false;
+        else {
+            this.GetComponent<LineRenderer>().enabled = false;
+            checkForReach = false;
+        }
         //Debug.Log(agentScript.checkIfRayHitsObject);
 
         lr.SetPosition(0, transform.parent.position);
         RaycastHit hit; 
         if(Physics.Raycast(transform.parent.position, transform.forward, out hit)){
             if(hit.collider){
+
+                //ignoriere laser collision mit wall
+                /*if (hit.collider.gameObject.tag == "wall")
+                {
+                    Physics.IgnoreCollision(theobjectToIgnore.collider, collider);
+                }*/
+
                 //here das collision mit addforce bearbeiten
-                Debug.Log("tets");
-                goalRigidbody = GameObject.Find("Goal").GetComponent<Rigidbody>();
+
+                //find method which identifies gameobject of collider
+                if(hit.collider.gameObject.name == "Goal" && checkForReach == true){
+                    Debug.Log("Tetetee");
+                    goalRigidbody = GameObject.Find("Goal").GetComponent<Rigidbody>();
+                    goalRigidbody.AddForce(0,0,1,ForceMode.Impulse);
+                    agentScript.checkIfRayMovedGoal = true;
+                }
                 //ich kann https://docs.unity3d.com/ScriptReference/Transform-position.html transform.position verwenden, um mein objekt zu bewegen
                 //frage ist bloß ob ich die methode auf meinen rigidbody oder auf meinem gameobject aufrufen muss?
                 //ich kann mit einem log einfach testen ob ich von rigidbody oder dem gameobject eine position bekomme, da wo ich sie bekomme, dass ist richtig
                 //ich kann auf den rigidbody position zugreifen
-                goalRigidbody.AddForce(0,0,2,ForceMode.Impulse);
+                //goalRigidbody.AddForce(0,0,2,ForceMode.Impulse);
+
+                //das blaue objekt fleigt am anfang direkt weg weil der laser die wall hittet 
+                //ich muss dem laser sagen dass er die wall ignorieren soll
+                
+                //transformiere hier wenn hit von goal object die position von goal object mit transform posittion
+                //goalRigidbody.position = goalRigidbody.position + new Vector3(0, 0, 2);
                 lr.SetPosition(1, hit.point);
+
+                //bewegung etc klappt alles, jetzt muss ich es nur noch hinbekommen das mein goal gegen die wand abprallt
+                //
             }
         }
         else lr.SetPosition(1, transform.forward*5000);
