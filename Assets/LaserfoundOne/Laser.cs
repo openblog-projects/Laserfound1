@@ -73,11 +73,11 @@ public class Laser : MonoBehaviour
 
                 //find method which identifies gameobject of collider
                 if(hit.collider.gameObject.name == "Goal" && checkForReach == true){
-                    Debug.Log("Tetetee");
                     goalRigidbody = GameObject.Find("Goal").GetComponent<Rigidbody>();
                     goalRigidbody.AddForce(0,0,1,ForceMode.Impulse);
                     agentScript.checkIfRayMovedGoal = true;
                 }
+                else agentScript.checkIfRayMovedGoal = false;
                 //ich kann https://docs.unity3d.com/ScriptReference/Transform-position.html transform.position verwenden, um mein objekt zu bewegen
                 //frage ist bloß ob ich die methode auf meinen rigidbody oder auf meinem gameobject aufrufen muss?
                 //ich kann mit einem log einfach testen ob ich von rigidbody oder dem gameobject eine position bekomme, da wo ich sie bekomme, dass ist richtig

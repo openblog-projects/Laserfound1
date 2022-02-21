@@ -1,19 +1,38 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
+using System.Threading;
+using System.Timers;
+using System.Threading.Tasks;
 using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 
-public class AgentScript : Agent{
 
+
+public class AgentScript : Agent{
+    //Notes
+    /*
+    bevor ich endepisode mache kann ich ja einen timer einbauen
+
+    problem ist dass ich addforce nicht sehe weil direkt endepisode eintrifft nach dem treffen vom laser
+    ich könnten einen timer erstellen
+
+
+    
+    */
+    public bool checkLoopEntryForEndEpisode = false;
     public bool checkIfRayMovedGoal = false;
+    public int countForEndEpisode = 0;
 
     public bool checkIfRayHitsObject = false;
     
     public override void OnEpisodeBegin()
     {
-        transform.localPosition = Vector3.zero;
+        Debug.Log("Kevin");
+        this.transform.localPosition = new Vector3(0f, 0f, 0f);
+        Debug.Log("Kevin2");
     }
 
     //helper method to see if goal gets hit from RayPerceptionSensor
@@ -66,51 +85,71 @@ public class AgentScript : Agent{
         float moveZ = actions.ContinuousActions[1];
         float moveSpeed = 3f;
         transform.localPosition += new Vector3(moveX, 0, moveZ) * Time.deltaTime * moveSpeed;
+
+        //i could accumulate reward and than 
+
+       /*if(Convert.ToInt32((DateTime.Now.TimeOfDay - date).TotalSeconds) > 2){
+            Debug.Log("Tst");
+        }*/
+        
+
+        //abfrage ob timer eine certain zeit erreicht hat wenn ja dann endepisode (2sek)
+
         //wenn der Ray getroffen hat dann kommt es auch automatisch zu einem Treffer vom Laser und daher zum reward. nach jedem reward beginnt die Epsiode neu.
-        if(checkIfRayMovedGoal == true){
-            EndEpisode();
+
+        //ich glaube weil die methode x mal aufgerufen wird...
+        countForEndEpisode =+ 1;
+        //Debug.Log(countForEndEpisode);
+        if(checkIfRayMovedGoal == true /*&& countForEndEpisode == 1 && checkLoopEntryForEndEpisode == false*/){
+            checkLoopEntryForEndEpisode = true;
+            //var erstellen die es ermöglicht dass man nur einmal in die methode rein geht, solange EndEpisode noch nicht ausgeführt wurde
+            checkLoopEntryForEndEpisode = true;
+            Debug.Log("Drin");
+            //EndEpisode();
+
+
+
+            System.Timers.Timer aTimer = new System.Timers.Timer();
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 100;
+            aTimer.Enabled = true;
+;
+
+
+            //wenn ich das gegenwärtige problem bekomme dann 
+
+
+            //ich nehme mir datetime now und speicher in var
+            //erstelle if loop mit differenz zwischen var aus step 1 und current wenn > 2sek endepisode check = false
+            
+
+
+            //ich kann auch die zeit von der current date time nehmen und diese in einer var speichern. in einem loop dann immer die differenz zwsichen beiden zeiten abfragen und bei 2sec ednepisode
+            //start timer here and 
+            /*EndEpisode();
+            Task.Delay(new TimeSpan(0, 0, 2)).ContinueWith(o => { EndEpisode(); });
+            System.Threading.Tasks.Task.Delay(1000).ContinueWith( (_) => checkLoopEntryForEndEpisode = false );
+            System.Threading.Tasks.Task.Delay(1000).ContinueWith( (_) => EndEpisode() );
+            System.Threading.Tasks.Task.Delay(1000).ContinueWith( (_) => Debug.Log("HALLALALLLALLLA") );*/
+            countForEndEpisode = 0;
+            //wenn es war ist dass das goal von einem laser getroffen wird dann könnte ich beim ersten mal einen timer starten 
+            //in jeder runde von actions checke ich dann den satus von dem tmer und bei einer bestoimmten zeit endepisode und checkLoopEntryForEndEpisode = true
         }
+        
     }
 
+    public void OnTimedEvent(object source, ElapsedEventArgs e)
+    {
+        //Debug.Log("DASASASASAS");
+        EndEpisode();
+        Debug.Log("DASASASASAS");
+    }
     //just for testing
     public override void Heuristic(in ActionBuffers actionsOut){
         ActionSegment<float> continuousActions = actionsOut.ContinuousActions;
         continuousActions[0] = Input.GetAxisRaw("Horizontal");
         continuousActions[1] = Input.GetAxisRaw("Vertical");
     }
-
-    //hier erstelle ich meine methode für reward 
-    //immer wenn checkIfRayHitsObject = true; dann bekommt agent +1 reward
-    //vielleicht kann ich einen winzigen -0.001 negativen reward einbauen, sodass sich der agent überhaupt bewegt und nicht einfach nur still steht
-    //vorallem das result belohnen 
-    //rewards between -1 1
-    //end episode
-    //
-    //AddReward(1.0f);
-    //ich will mir ein example anschauen wie dort mit endspisode gearbeittet wird
-    //creating prefab and than train on 20 arenas
-    //training --> reading train docs for ml agents, configure train file for 1 mio steps
-    //start training? --> behaviors/config.file
-    //ich muss herausfinden, woran es liegt dass mein training nicht startet
-    //add force klappt nicht -- fixen
-    //keine bewegung --> ich kann einfach algo für bewegung mit hitbox vergleichen
-    //der agent muss seine localPosition wissen um sich bewegen zu können mit inference
-
-    //training:
-    //beim training funktioniert add force nicht
-    //ich muss ein endepisode einbauen EndEpisode();
-
-    //ich darf kein EndeEpisode in meine collectobservations rein nehmen
-    //ich kann eine public var erstellen welche bei positiven reward auf einen wert gesetztz wird und dann bei e
-    //current problen on which I work is that I cannot call my EndEpisode in my collectobservations because i get a recursive function call. can i call endepisode in any way inside of collect obeservations? wenn nicht wo kann ich endepisode sonst aufrufen?
-    //ein agent lern von seinen episoden wenn ich keine habe dann kann mein agetn auch nicht lernen
-    //macht es überhaupt sinn den blauen agenten nicht zu respawn? weil ein spiel geht ja immer so lang bis der laser einmal getroffen hat.
-
-    //wenn ich endepisode einsetze dann wird der agent zurückgesetzt bevor ich ihn durch laser weggeschossen habe
-    //das kann ich umgehen wenn ich eine public variable setze wenn das goal weggeschossen wurde und wenn diese zb true ist kann ich die episode beenden
-    //variable für den check ob laser goal wegbewegt hat (public var in )
-    //mein objekt sinkt einfach nur in eine plattform ein (vllt wird bei episodebegin stable von seinem parent gelöst?)
-    //ich glaube mein agent wird bei episode begin in der lust gespwaned und fliegt dann mit kraft (durch beschleunigung in der luft durch die plattform)
 }
 
     
